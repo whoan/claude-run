@@ -234,10 +234,10 @@ export function createServer(options: ServerOptions) {
     port,
     start: async () => {
       await loadStorage();
-      const url = `http://localhost:${port}/`;
-      console.log(`\n  claude-run is running at ${url}\n`);
+      const openUrl = `http://localhost:${dev ? 12000 : port}/`;
+      console.log(`\n  claude-run is running at ${openUrl}\n`);
       if (shouldOpen) {
-        open(url);
+        open(openUrl);
       }
       httpServer = serve({
         fetch: app.fetch,
