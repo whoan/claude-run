@@ -14,7 +14,7 @@ import {
   getConversationStream,
   invalidateHistoryCache,
   addToFileIndex,
-} from "./storage.js";
+} from "./storage";
 import {
   initWatcher,
   startWatcher,
@@ -23,14 +23,22 @@ import {
   offHistoryChange,
   onSessionChange,
   offSessionChange,
-} from "./watcher.js";
+} from "./watcher";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import open from "open";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+function getWebDistPath(): string {
+  const prodPath = join(__dirname, "web");
+  if (existsSync(prodPath)) {
+    return prodPath;
+  }
+  return join(__dirname, "..", "dist", "web");
+}
 
 export interface ServerOptions {
   port: number;
@@ -203,7 +211,7 @@ export function createServer(options: ServerOptions) {
     });
   });
 
-  const webDistPath = join(__dirname, "web");
+  const webDistPath = getWebDistPath();
 
   app.use("/*", serveStatic({ root: webDistPath }));
 

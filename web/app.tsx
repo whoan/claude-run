@@ -6,6 +6,49 @@ import SessionList from "./components/session-list";
 import SessionView from "./components/session-view";
 import { useEventSource } from "./hooks/use-event-source";
 
+interface SessionHeaderProps {
+  session: Session;
+  copied: boolean;
+  onCopyResumeCommand: (sessionId: string, projectPath: string) => void;
+}
+
+function SessionHeader(props: SessionHeaderProps) {
+  const { session, copied, onCopyResumeCommand } = props;
+
+  return (
+    <>
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <span className="text-sm text-zinc-300 truncate max-w-xs">
+          {session.display}
+        </span>
+        <span className="text-xs text-zinc-600 shrink-0">
+          {session.projectName}
+        </span>
+        <span className="text-xs text-zinc-600 shrink-0">
+          {formatTime(session.timestamp)}
+        </span>
+      </div>
+      <button
+        onClick={() => onCopyResumeCommand(session.id, session.project)}
+        className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-zinc-300 bg-zinc-800 hover:bg-zinc-700 rounded transition-colors cursor-pointer shrink-0"
+        title="Copy resume command to clipboard"
+      >
+        {copied ? (
+          <>
+            <Check className="w-3.5 h-3.5 text-green-500" />
+            <span className="text-green-500">Copied!</span>
+          </>
+        ) : (
+          <>
+            <Copy className="w-3.5 h-3.5" />
+            <span>Copy Resume Command</span>
+          </>
+        )}
+      </button>
+    </>
+  );
+}
+
 function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [projects, setProjects] = useState<string[]>([]);
@@ -25,6 +68,14 @@ function App() {
     },
     [],
   );
+
+  const selectedSessionData = useMemo(() => {
+    if (!selectedSession) {
+      return null;
+    }
+
+    return sessions.find((s) => s.id === selectedSession) || null;
+  }, [sessions, selectedSession]);
 
   useEffect(() => {
     fetch("/api/projects")
@@ -113,48 +164,19 @@ function App() {
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="p-1.5 hover:bg-zinc-800 rounded transition-colors cursor-pointer"
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={
+              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
           >
             <PanelLeft className="w-4 h-4 text-zinc-400" />
           </button>
-          {selectedSession && (() => {
-            const session = sessions.find((s) => s.id === selectedSession);
-            if (!session) {
-              return null;
-            }
-            return (
-              <>
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <span className="text-sm text-zinc-300 truncate max-w-xs">
-                    {session.display}
-                  </span>
-                  <span className="text-xs text-zinc-600 shrink-0">
-                    {session.projectName}
-                  </span>
-                  <span className="text-xs text-zinc-600 shrink-0">
-                    {formatTime(session.timestamp)}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleCopyResumeCommand(session.id, session.project)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-zinc-300 bg-zinc-800 hover:bg-zinc-700 rounded transition-colors cursor-pointer shrink-0"
-                  title="Copy resume command to clipboard"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-green-500" />
-                      <span className="text-green-500">Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Resume Command</span>
-                    </>
-                  )}
-                </button>
-              </>
-            );
-          })()}
+          {selectedSessionData && (
+            <SessionHeader
+              session={selectedSessionData}
+              copied={copied}
+              onCopyResumeCommand={handleCopyResumeCommand}
+            />
+          )}
         </div>
         <div className="flex-1 overflow-hidden">
           {selectedSession ? (

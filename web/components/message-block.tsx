@@ -152,49 +152,63 @@ interface ContentBlockRendererProps {
   toolMap?: Map<string, string>;
 }
 
+const TOOL_ICONS: Record<string, typeof Wrench> = {
+  todowrite: ListTodo,
+  read: FileCode,
+  bash: Terminal,
+  grep: Search,
+  edit: Pencil,
+  write: FilePlus2,
+  glob: FolderOpen,
+  task: Bot,
+};
+
+const TOOL_ICON_PATTERNS: Array<{ patterns: string[]; icon: typeof Wrench }> = [
+  { patterns: ["web", "fetch", "url"], icon: Globe },
+  { patterns: ["ask", "question"], icon: MessageSquare },
+  { patterns: ["git", "commit"], icon: GitBranch },
+  { patterns: ["sql", "database", "query"], icon: Database },
+  { patterns: ["file", "disk"], icon: HardDrive },
+];
+
 function getToolIcon(toolName: string) {
   const name = toolName.toLowerCase();
-  if (name === "todowrite") {
-    return ListTodo;
+
+  if (TOOL_ICONS[name]) {
+    return TOOL_ICONS[name];
   }
-  if (name === "read") {
-    return FileCode;
+
+  for (const { patterns, icon } of TOOL_ICON_PATTERNS) {
+    if (patterns.some((p) => name.includes(p))) {
+      return icon;
+    }
   }
-  if (name === "bash") {
-    return Terminal;
-  }
-  if (name === "grep") {
-    return Search;
-  }
-  if (name === "edit") {
-    return Pencil;
-  }
-  if (name === "write") {
-    return FilePlus2;
-  }
-  if (name === "glob") {
-    return FolderOpen;
-  }
-  if (name === "task") {
-    return Bot;
-  }
-  if (name.includes("web") || name.includes("fetch") || name.includes("url")) {
-    return Globe;
-  }
-  if (name.includes("ask") || name.includes("question")) {
-    return MessageSquare;
-  }
-  if (name.includes("git") || name.includes("commit")) {
-    return GitBranch;
-  }
-  if (name.includes("sql") || name.includes("database") || name.includes("query")) {
-    return Database;
-  }
-  if (name.includes("file") || name.includes("disk")) {
-    return HardDrive;
-  }
+
   return Wrench;
 }
+
+function getFilePathPreview(filePath: string): string {
+  const parts = filePath.split("/");
+  return parts.slice(-2).join("/");
+}
+
+type PreviewHandler = (input: Record<string, unknown>) => string | null;
+
+const TOOL_PREVIEW_HANDLERS: Record<string, PreviewHandler> = {
+  read: (input) => input.file_path ? getFilePathPreview(String(input.file_path)) : null,
+  edit: (input) => input.file_path ? getFilePathPreview(String(input.file_path)) : null,
+  write: (input) => input.file_path ? getFilePathPreview(String(input.file_path)) : null,
+  bash: (input) => {
+    if (!input.command) {
+      return null;
+    }
+    const cmd = String(input.command);
+    return cmd.length > 50 ? cmd.slice(0, 50) + "..." : cmd;
+  },
+  grep: (input) => input.pattern ? `"${String(input.pattern)}"` : null,
+  glob: (input) => input.pattern ? String(input.pattern) : null,
+  task: (input) => input.description ? String(input.description) : null,
+};
 
 function getToolPreview(toolName: string, input: Record<string, unknown> | undefined): string | null {
   if (!input) {
@@ -202,34 +216,10 @@ function getToolPreview(toolName: string, input: Record<string, unknown> | undef
   }
 
   const name = toolName.toLowerCase();
+  const handler = TOOL_PREVIEW_HANDLERS[name];
 
-  if (name === "read" && input.file_path) {
-    const filePath = String(input.file_path);
-    const parts = filePath.split("/");
-    return parts.slice(-2).join("/");
-  }
-
-  if (name === "bash" && input.command) {
-    const cmd = String(input.command);
-    return cmd.length > 50 ? cmd.slice(0, 50) + "..." : cmd;
-  }
-
-  if (name === "grep" && input.pattern) {
-    return `"${String(input.pattern)}"`;
-  }
-
-  if (name === "glob" && input.pattern) {
-    return String(input.pattern);
-  }
-
-  if ((name === "edit" || name === "write") && input.file_path) {
-    const filePath = String(input.file_path);
-    const parts = filePath.split("/");
-    return parts.slice(-2).join("/");
-  }
-
-  if (name === "task" && input.description) {
-    return String(input.description);
+  if (handler) {
+    return handler(input);
   }
 
   if (name.includes("web") && input.url) {

@@ -2,6 +2,11 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import type { ConversationMessage } from "@claude-run/api";
 import MessageBlock from "./message-block";
 
+const MAX_RETRIES = 10;
+const BASE_RETRY_DELAY_MS = 1000;
+const MAX_RETRY_DELAY_MS = 30000;
+const SCROLL_THRESHOLD_PX = 100;
+
 interface SessionViewProps {
   sessionId: string;
 }
@@ -19,8 +24,6 @@ function SessionView(props: SessionViewProps) {
   const eventSourceRef = useRef<EventSource | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
-  const maxRetries = 10;
-  const baseDelay = 1000;
 
   const connect = useCallback(() => {
     if (!mountedRef.current) {
@@ -59,8 +62,8 @@ function SessionView(props: SessionViewProps) {
         return;
       }
 
-      if (retryCountRef.current < maxRetries) {
-        const delay = Math.min(baseDelay * Math.pow(2, retryCountRef.current), 30000);
+      if (retryCountRef.current < MAX_RETRIES) {
+        const delay = Math.min(BASE_RETRY_DELAY_MS * Math.pow(2, retryCountRef.current), MAX_RETRY_DELAY_MS);
         retryCountRef.current++;
         retryTimeoutRef.current = setTimeout(() => connect(), delay);
       }
@@ -99,7 +102,7 @@ function SessionView(props: SessionViewProps) {
     }
 
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < SCROLL_THRESHOLD_PX;
     setAutoScroll(isAtBottom);
   };
 

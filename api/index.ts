@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { program } from "commander";
-import { createServer } from "./server.js";
+import { createServer } from "./server";
 import { homedir } from "os";
 import { join } from "path";
 import { readFileSync } from "fs";
