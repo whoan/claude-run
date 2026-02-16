@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "concurrently \"pnpm dev:web\" \"pnpm dev:server\"",
     "dev:server": "tsx watch api/index.ts --dev",
-    "dev:web": "vite --config web/vite.config.ts",
+    "dev:web": "vite --config web/vite.config.ts --host",
     "build": "pnpm build:server && pnpm build:web",
     "build:web": "vite build --config web/vite.config.ts",
     "build:server": "tsup api/index.ts --format esm --dts --clean",

@@ -1,0 +1,9 @@
+services:
+
+  claude-run:
+    image: claude-run
+    ports:
+      - "12000:12000"
+    restart: unless-stopped
+    volumes:
+      - "${HOME}/.claude:/root/.claude:ro"
